@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MediGuide AI – Smart Medical Recommendation Assistant</title>
+  <meta name="description" content="MediGuide AI helps you identify illnesses from symptoms and provides detailed medicine recommendations with dosage, timing, and pricing in INR." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    @media print {
+      body { background: white; color: black; }
+      .disclaimer-banner, .header-badges, .input-section, .loading-section, .results-toolbar, .footer { display: none !important; }
+      .medicine-card { border: 1px solid #ccc; box-shadow: none; break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+  <!-- Decorative Background Blobs -->
+  <div class="bg-blob blob-1"></div>
+  <div class="bg-blob blob-2"></div>
+  <div class="bg-blob blob-3"></div>
+
+  <!-- Disclaimer Banner -->
+  <div class="disclaimer-banner" id="disclaimerBanner">
+    <div class="disclaimer-inner">
+      <span class="disclaimer-icon">⚕️</span>
+      <span>MediGuide AI provides <strong>AI-generated suggestions only</strong>. Always consult a licensed doctor before taking any medication. This is not a substitute for professional medical advice.</span>
+      <button class="disclaimer-close" id="disclaimerClose" aria-label="Close disclaimer">✕</button>
+    </div>
+  </div>
+
+  <!-- Header -->
+  <header class="header">
+    <div class="container">
+      <div class="logo">
+        <div class="logo-icon">
+          <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="20" cy="20" r="20" fill="url(#logoGrad)"/>
+            <path d="M20 10v20M10 20h20" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+            <defs>
+              <linearGradient id="logoGrad" x1="0" y1="0" x2="40" y2="40">
+                <stop offset="0%" stop-color="#22d3ee"/>
+                <stop offset="100%" stop-color="#8b5cf6"/>
+              </linearGradient>
+            </defs>
+          </svg>
+        </div>
+        <div>
+          <h1 class="logo-title">MediGuide <span>AI</span></h1>
+          <p class="logo-subtitle">Powered by Groq AI · Llama 3.3</p>
+        </div>
+      </div>
+      <div class="header-badges">
+        <button class="theme-toggle" id="themeToggle" aria-label="Toggle dark/light mode">
+          <span class="theme-icon">🌙</span>
+        </button>
+        <button class="theme-toggle" id="settingsToggle" aria-label="Open security settings">
+          <span class="settings-icon">⚙️</span>
+        </button>
+        <span class="badge badge-ai">🤖 AI Assisted</span>
+        <span class="badge badge-india">🇮🇳 INR Pricing</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="main">
+    <div class="container">
+
+      <!-- Hero Section -->
+      <section class="hero">
+        <h2 class="hero-title">Describe Your Symptoms,<br/>Get Instant Medical Guidance</h2>
+        <p class="hero-subtitle">Our AI analyzes your symptoms and recommends medicines with dosage, timing & pricing — all in seconds.</p>
+      </section>
+
+      <!-- Input Card -->
+      <section class="input-section" id="inputSection">
+        <div class="input-card">
+          <div class="input-card-header">
+            <div class="input-card-icon">🩺</div>
+            <div>
+              <h3>Tell us your symptoms</h3>
+              <p>Be as detailed as possible for better recommendations</p>
+            </div>
+          </div>
+
+          <!-- Symptoms Input -->
+          <div class="form-group">
+            <label for="symptomsInput" class="form-label">
+              <span class="label-icon">📋</span>
+              Your Symptoms
+            </label>
+            <textarea
+              id="symptomsInput"
+              class="form-textarea"
+              placeholder="I have a headache, fever, and body ache since 2 days..."
+              rows="5"
+              maxlength="1000"
+            ></textarea>
+            <div id="autocompleteSuggestions" class="autocomplete-suggestions"></div>
+            <div class="char-counter"><span id="charCount">0</span>/1000</div>
+          </div>
+
+          <!-- Quick Symptom Chips -->
+          <div class="quick-symptoms">
+            <span class="quick-label">Quick add:</span>
+            <div id="quickSymptomsList" class="quick-symptoms-list">
+              <!-- Dynamically populated -->
+            </div>
+          </div>
+
+          <button class="submit-btn" id="submitBtn">
+            <span class="btn-text">
+              <span class="btn-icon">🔍</span>
+              Get Medicine Guide
+            </span>
+            <div class="btn-shimmer"></div>
+          </button>
+        </div>
+
+        <!-- Recent Searches -->
+        <div class="recent-searches" id="recentSearches" style="display:none;">
+          <h4 class="recent-title">🕐 Recent Searches</h4>
+          <div class="recent-list" id="recentList"></div>
+          <button class="clear-history-btn" id="clearHistory">Clear History</button>
+        </div>
+      </section>
+
+      <!-- Loading State -->
+      <section class="loading-section" id="loadingSection" style="display:none;">
+        <div class="loading-card">
+          <div class="pulse-ring"></div>
+          <div class="dna-spinner">
+            <div class="dna-bar"></div>
+            <div class="dna-bar"></div>
+            <div class="dna-bar"></div>
+            <div class="dna-bar"></div>
+            <div class="dna-bar"></div>
+          </div>
+          <p class="loading-title">AI is analyzing your symptoms...</p>
+          <p class="loading-sub">Consulting medical databases and generating personalized recommendations</p>
+          <div class="loading-progress">
+            <div class="progress-bar" id="progressBar"></div>
+          </div>
+          <div class="loading-steps">
+            <span class="step active" id="step1">✓ Parsing symptoms</span>
+            <span class="step" id="step2">⋯ Identifying condition</span>
+            <span class="step" id="step3">⋯ Finding medicines</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Results Section -->
+      <section class="results-section" id="resultsSection" style="display:none;">
+        <!-- Action Toolbar -->
+        <div class="results-toolbar">
+          <div class="results-toolbar-left">
+            <span class="results-label">📊 Your Medical Guide</span>
+          </div>
+          <div class="results-toolbar-right">
+            <button class="tool-btn" id="copyBtn" title="Copy to clipboard">
+              <span class="tool-icon">📋</span> Copy
+            </button>
+            <button class="tool-btn" id="printBtn" title="Save as PDF / Print">
+              <span class="tool-icon">🖨️</span> Print / PDF
+            </button>
+            <button class="tool-btn tool-btn-location" id="pharmacyBtn" title="Find nearest pharmacy">
+              <span class="tool-icon">📍</span> Find Pharmacy
+            </button>
+            <button class="tool-btn tool-btn-secondary" id="newSearchBtn" title="New search">
+              <span class="tool-icon">↩</span> New Search
+            </button>
+          </div>
+        </div>
+
+        <!-- Condition Card -->
+        <div class="condition-card" id="conditionCard">
+          <div class="condition-badge">Detected Condition</div>
+          <h2 class="condition-name" id="conditionName">—</h2>
+          <p class="condition-description" id="conditionDescription">—</p>
+          <div class="condition-meta" id="conditionMeta"></div>
+        </div>
+
+        <!-- Substitution Note -->
+        <div class="substitution-note" id="substitutionNote" style="display:none;">
+          <span class="sub-icon">💡</span>
+          <span id="substitutionText">If Medicine 1 is unavailable, use Medicine 2 or 3 as alternatives.</span>
+        </div>
+
+        <!-- Medicine Cards Grid -->
+        <div class="medicines-grid" id="medicinesGrid"></div>
+
+        <!-- Final Disclaimer -->
+        <div class="final-disclaimer">
+          <div class="final-disclaimer-icon">⚠️</div>
+          <div>
+            <strong>Important Disclaimer</strong>
+            <p>This is AI-generated advice based on the symptoms you provided. It is NOT a substitute for professional medical consultation. Please visit a licensed doctor or pharmacist before taking any medication, especially if symptoms are severe or persistent.</p>
+          </div>
+        </div>
+
+        <!-- Error State (hidden by default) -->
+        <div class="error-card" id="errorCard" style="display:none;">
+          <div class="error-icon">❌</div>
+          <h3 class="error-title">Something went wrong</h3>
+          <p class="error-message" id="errorMessage">Unable to fetch recommendations. Please try again.</p>
+          <button class="error-retry-btn" id="retryBtn">Try Again</button>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <p>MediGuide AI &copy; 2026 — Built with ❤️ using Groq AI &nbsp;|&nbsp; <strong>Not a substitute for professional medical advice</strong></p>
+    </div>
+  </footer>
+
+  <!-- Security & Settings Modal -->
+  <div class="modal-overlay" id="settingsModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3><span class="label-icon">🛡️</span> Privacy & History</h3>
+        <button class="modal-close" id="closeSettings">✕</button>
+      </div>
+      
+      <div class="modal-body">
+        <div class="settings-row">
+          <div>
+            <label class="form-label" style="margin-bottom: 2px;">Local Search History</label>
+            <p style="font-size: 0.75rem; color: var(--text-secondary); opacity: 0.8;">Your searches are stored locally in this browser.</p>
+          </div>
+        </div>
+
+        <hr class="modal-divider"/>
+
+        <div class="form-group">
+          <label class="form-label">Clear All Local Data</label>
+          <p style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 12px;">Wipes all history, themes, and personal settings from this browser.</p>
+          <button class="btn-danger" id="clearAllData">🚨 Clear All Data</button>
+        </div>
+      </div>
+      
+      <div class="modal-footer">
+        <p>🔒 All your data stays locally on your device. Powered by Vercel.</p>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
