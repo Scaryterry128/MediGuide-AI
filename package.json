@@ -1,6 +1,7 @@
 {
   "name": "mediguide-ai",
   "version": "1.0.0",
+    "type": "module",
   "description": "Smart Medical Recommendation Assistant",
   "main": "index.html",
   "scripts": {
