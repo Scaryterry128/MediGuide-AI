@@ -42,8 +42,6 @@ export default async function handler(request) {
     }
 
     const apiKey = rawApiKey.trim();
-
-    // Safely extract input across any possible frontend key
     const userContent = (
       body.symptoms || 
       body.prompt || 
@@ -59,7 +57,6 @@ export default async function handler(request) {
       );
     }
 
-    // Auto-detect accessible Groq model
     let selectedModel = MODEL_CANDIDATES[0];
     try {
       const modelsRes = await fetch('https://api.groq.com/openai/v1/models', {
