@@ -2,17 +2,17 @@ export const config = {
   runtime: 'edge',
 };
 
-const SYSTEM_PROMPT = `You are a Master Life Scheduler. User gives daily constraints, available hours, and goals.
-RULES:
-1. "time_management": Evaluate constraints vs free time. Output daily_schedule array breaking down hours for chores and exact hours per goal.
-2. For each "goal":
-- "analysis": Evaluate it independently.
-- "daily_plan": Keep daily plan concise (maximum 10 key actionable days).
-- "gadgets": Construct explicit search URLs (e.g. amazon.com/s?k=microphone).
-- "learning": Provide specific Youtube Search URLs & websites.
-- "post_mastery": Provide jobs, monetization tactics.
-OUTPUT RAW JSON MATCHING:
-{"time_management":{"evaluation":"...","daily_schedule":[{"activity":"...","hours":0}]},"goals":[{"goal_number":1,"goal_name":"...","analysis":{"verdict":"Good ✅","phase_duration":"X Days","explanation":"...","breakdown":["..."]},"guide":{"steps":["..."],"milestones":["..."]},"daily_plan":[{"day":"Day 1","action":"..."}],"gadgets":[{"name":"","price_guess":"","url":"","platform":"","reason":""}],"learning":{"channels":[{"name":"","url":"","description":""}],"videos":[{"title":"","url":""}],"websites":[{"name":"","url":""}]},"post_mastery":{"applications":[""],"monetization":[""],"next_steps":[""]}}]}`;
+const SYSTEM_PROMPT = `You are MediGuide, an empathetic AI health and symptom advisor.
+Provide structured, preliminary health guidance based on user-described symptoms.
+
+RULES & FORMATTING:
+1. ALWAYS start with a clear notice that you are an AI, not a licensed medical professional.
+2. Structure your response into 4 distinct Markdown sections:
+   - **Preliminary Insight**: General overview of potential non-emergency causes.
+   - **Recommended Next Steps**: Home care, hydration, or lifestyle measures.
+   - **Questions for Your Doctor**: Key details the user should mention to a physician.
+   - **🚨 Red Flag Symptoms**: Emergency warning signs that require immediate urgent care.
+3. Keep the tone calm, objective, clear, and reassuring.`;
 
 const MODEL_CANDIDATES = [
   "llama-3.3-70b-versatile",
@@ -42,15 +42,24 @@ export default async function handler(request) {
     }
 
     const apiKey = rawApiKey.trim();
-    const userContent = (body.prompt || "").toString().trim();
+
+    // Safely extract input across any possible frontend key
+    const userContent = (
+      body.symptoms || 
+      body.prompt || 
+      body.query || 
+      body.message || 
+      ""
+    ).toString().trim();
 
     if (!userContent) {
       return new Response(
-        JSON.stringify({ error: 'Prompt cannot be empty.' }), 
+        JSON.stringify({ error: 'Please provide symptom details before submitting.' }), 
         { status: 400, headers: { 'Content-Type': 'application/json' } }
       );
     }
 
+    // Auto-detect accessible Groq model
     let selectedModel = MODEL_CANDIDATES[0];
     try {
       const modelsRes = await fetch('https://api.groq.com/openai/v1/models', {
@@ -63,7 +72,7 @@ export default async function handler(request) {
         if (match) selectedModel = match;
       }
     } catch (e) {
-      console.warn('Model list check fallback:', e);
+      console.warn('Groq model detection fallback:', e);
     }
 
     let groqRes;
@@ -77,9 +86,8 @@ export default async function handler(request) {
           { role: "system", content: SYSTEM_PROMPT },
           { role: "user", content: userContent }
         ],
-        response_format: { type: "json_object" },
-        temperature: 0.7,
-        max_tokens: 2000
+        temperature: 0.5,
+        max_tokens: 1500
       };
 
       groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
@@ -92,6 +100,7 @@ export default async function handler(request) {
       });
 
       if (groqRes.ok) break;
+
       errText = await groqRes.text();
       if (groqRes.status !== 404 && !errText.includes('model_not_found')) break;
     }
@@ -103,12 +112,10 @@ export default async function handler(request) {
       );
     }
 
-    const groqData = await groqRes.json();
-    const contentStr = groqData.choices?.[0]?.message?.content || '{}';
-    const cleanedContent = contentStr.replace(/```json|```/g, '').trim();
-    const scheduleData = JSON.parse(cleanedContent);
+    const data = await groqRes.json();
+    const recommendation = data.choices?.[0]?.message?.content || 'No recommendation generated.';
 
-    return new Response(JSON.stringify(scheduleData), {
+    return new Response(JSON.stringify({ recommendation }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' }
     });
