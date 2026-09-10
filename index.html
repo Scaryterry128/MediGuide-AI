@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>MediGuide AI — Health & Symptom Advisor</title>
+  <title>MediGuide AI — Health, Medicine & Pharmacy Finder</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🩺</text></svg>">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <style>
@@ -21,12 +21,7 @@
       --radius: 16px;
     }
 
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
 
     body {
       background-color: var(--bg-dark);
@@ -42,207 +37,97 @@
       align-items: center;
     }
 
-    .container {
-      width: 100%;
-      max-width: 880px;
-    }
+    .container { width: 100%; max-width: 880px; }
 
-    header {
-      text-align: center;
-      margin-bottom: 2rem;
-    }
-
+    header { text-align: center; margin-bottom: 2rem; }
     header h1 {
-      font-size: 2.5rem;
-      font-weight: 700;
+      font-size: 2.5rem; font-weight: 700;
       background: var(--accent-gradient);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
       margin-bottom: 0.5rem;
     }
-
-    header p {
-      color: var(--text-muted);
-      font-size: 1rem;
-    }
+    header p { color: var(--text-muted); font-size: 1rem; }
 
     .disclaimer-banner {
       background: var(--warning-red);
       border: 1px solid var(--warning-border);
       border-radius: var(--radius);
-      padding: 1.25rem;
-      margin-bottom: 1.5rem;
-      color: #fca5a5;
+      padding: 1.25rem; margin-bottom: 1.5rem; color: #fca5a5;
     }
-
-    .disclaimer-banner h3 {
-      font-size: 1rem;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      margin-bottom: 0.4rem;
-      color: #ef4444;
-    }
-
-    .disclaimer-banner p {
-      font-size: 0.875rem;
-      line-height: 1.45;
-      color: #fecaca;
-    }
+    .disclaimer-banner h3 { font-size: 1rem; color: #ef4444; margin-bottom: 0.4rem; }
+    .disclaimer-banner p { font-size: 0.875rem; color: #fecaca; line-height: 1.45; }
 
     .card {
       background: var(--card-bg);
       border: 1px solid var(--card-border);
       backdrop-filter: blur(12px);
       border-radius: var(--radius);
-      padding: 1.75rem;
-      margin-bottom: 1.5rem;
+      padding: 1.75rem; margin-bottom: 1.5rem;
       box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
     }
 
-    .card-title {
-      font-size: 1.1rem;
-      font-weight: 600;
-      margin-bottom: 1rem;
-      color: #fff;
-    }
-
-    .form-group {
-      margin-bottom: 1.25rem;
-    }
-
-    label {
-      display: block;
-      font-size: 0.875rem;
-      font-weight: 500;
-      color: var(--text-muted);
-      margin-bottom: 0.5rem;
-    }
+    .form-group { margin-bottom: 1.25rem; }
+    label { display: block; font-size: 0.875rem; font-weight: 500; color: var(--text-muted); margin-bottom: 0.5rem; }
 
     textarea, select {
-      width: 100%;
-      background: rgba(10, 14, 23, 0.8);
+      width: 100%; background: rgba(10, 14, 23, 0.8);
       border: 1px solid rgba(255, 255, 255, 0.1);
-      border-radius: 10px;
-      padding: 0.85rem 1rem;
-      color: var(--text-main);
-      font-size: 0.95rem;
-      outline: none;
+      border-radius: 10px; padding: 0.85rem 1rem;
+      color: var(--text-main); font-size: 0.95rem; outline: none;
     }
+    textarea { resize: vertical; min-height: 110px; }
 
-    textarea {
-      resize: vertical;
-      min-height: 110px;
-    }
-
-    .chip-container {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.5rem;
-      margin-top: 0.5rem;
-      margin-bottom: 1.25rem;
-    }
-
+    .chip-container { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 0.5rem 0 1.25rem 0; }
     .chip {
       background: rgba(255, 255, 255, 0.05);
       border: 1px solid rgba(255, 255, 255, 0.1);
-      color: var(--accent-cyan);
-      border-radius: 20px;
-      padding: 0.35rem 0.8rem;
-      font-size: 0.825rem;
-      cursor: pointer;
-      transition: background 0.2s, border-color 0.2s;
+      color: var(--accent-cyan); border-radius: 20px;
+      padding: 0.35rem 0.8rem; font-size: 0.825rem; cursor: pointer;
     }
 
-    .chip:hover {
-      background: rgba(6, 182, 212, 0.15);
-      border-color: var(--accent-cyan);
-    }
-
-    .row {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 1rem;
-    }
-
-    @media (max-width: 640px) {
-      .row { grid-template-columns: 1fr; }
-    }
+    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    @media (max-width: 640px) { .row { grid-template-columns: 1fr; } }
 
     .btn-primary {
-      width: 100%;
-      background: var(--accent-gradient);
-      border: none;
-      color: white;
-      padding: 1rem;
-      border-radius: 12px;
-      font-size: 1.05rem;
-      font-weight: 600;
-      cursor: pointer;
-      box-shadow: 0 4px 20px rgba(13, 148, 136, 0.4);
+      width: 100%; background: var(--accent-gradient);
+      border: none; color: white; padding: 1rem;
+      border-radius: 12px; font-size: 1.05rem; font-weight: 600; cursor: pointer;
     }
 
     .btn-action {
       background: rgba(255, 255, 255, 0.06);
       border: 1px solid rgba(255, 255, 255, 0.12);
-      color: #fff;
-      padding: 0.5rem 0.9rem;
-      border-radius: 8px;
-      font-size: 0.85rem;
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      gap: 0.4rem;
-      transition: background 0.2s;
-    }
-
-    .btn-action:hover {
-      background: rgba(255, 255, 255, 0.12);
+      color: #fff; padding: 0.5rem 0.9rem; border-radius: 8px;
+      font-size: 0.85rem; cursor: pointer; display: inline-flex; align-items: center; gap: 0.4rem;
     }
 
     .section-box {
       background: rgba(255, 255, 255, 0.02);
       border-left: 3px solid var(--accent-cyan);
-      padding: 1rem;
-      border-radius: 8px;
-      margin-bottom: 1rem;
+      padding: 1rem; border-radius: 8px; margin-bottom: 1rem;
     }
-
     .red-flag-box {
       background: rgba(239, 68, 68, 0.08);
       border-left: 3px solid #ef4444;
-      padding: 1rem;
-      border-radius: 8px;
-      margin-bottom: 1rem;
+      padding: 1rem; border-radius: 8px; margin-bottom: 1rem;
     }
 
-    ul {
-      padding-left: 1.25rem;
-      margin-top: 0.5rem;
-      color: var(--text-muted);
-      font-size: 0.9rem;
-    }
-
+    ul { padding-left: 1.25rem; margin-top: 0.5rem; color: var(--text-muted); font-size: 0.9rem; }
     li { margin-bottom: 0.4rem; }
 
-    .spinner {
-      display: inline-block;
-      width: 20px;
-      height: 20px;
-      border: 3px solid rgba(255, 255, 255, 0.3);
-      border-radius: 50%;
-      border-top-color: #fff;
-      animation: spin 0.8s ease-in-out infinite;
+    .pharmacy-bar {
+      display: flex; justify-content: space-between; align-items: center;
+      background: rgba(13, 148, 136, 0.1); border: 1px solid rgba(13, 148, 136, 0.25);
+      border-radius: 12px; padding: 1rem; margin-bottom: 1rem;
     }
 
+    .spinner {
+      display: inline-block; width: 20px; height: 20px;
+      border: 3px solid rgba(255, 255, 255, 0.3); border-radius: 50%;
+      border-top-color: #fff; animation: spin 0.8s ease-in-out infinite;
+    }
     @keyframes spin { to { transform: rotate(360deg); } }
     .hidden { display: none !important; }
-
-    @media print {
-      body { background: white; color: black; }
-      .disclaimer-banner, #symptom-form, .btn-action { display: none !important; }
-      .card { border: none; box-shadow: none; background: transparent; }
-    }
   </style>
 </head>
 <body>
@@ -250,12 +135,12 @@
   <div class="container">
     <header>
       <h1>MediGuide AI</h1>
-      <p>Instant Health Insights & Doctor Visit Assistant</p>
+      <p>Health Advisor, OTC Medicine Guide & Pharmacy Locator</p>
     </header>
 
     <div class="disclaimer-banner">
       <h3>⚠️ Medical Disclaimer</h3>
-      <p>MediGuide AI provides informational recommendations only. It is <strong>NOT</strong> a substitute for professional clinical judgment. Consult a qualified medical practitioner for serious health issues.</p>
+      <p>MediGuide AI provides informational recommendations only. Always consult a licensed pharmacist or physician before consuming any medication.</p>
     </div>
 
     <div id="symptom-form" class="card">
@@ -270,16 +155,15 @@
         <button class="chip" onclick="addSymptom('Fever & Chills')">+ Fever & Chills</button>
         <button class="chip" onclick="addSymptom('Sore Throat')">+ Sore Throat</button>
         <button class="chip" onclick="addSymptom('Stomach Pain')">+ Stomach Pain</button>
-        <button class="chip" onclick="addSymptom('Dizziness')">+ Dizziness</button>
       </div>
 
       <div class="row">
         <div class="form-group">
           <label for="severity">Severity Level</label>
           <select id="severity">
-            <option value="Mild">Mild (Noticeable but manageable)</option>
-            <option value="Moderate" selected>Moderate (Disrupting routine)</option>
-            <option value="Severe">Severe (Unbearable)</option>
+            <option value="Mild">Mild</option>
+            <option value="Moderate" selected>Moderate</option>
+            <option value="Severe">Severe</option>
           </select>
         </div>
         <div class="form-group">
@@ -288,7 +172,6 @@
             <option value="Less than 24 hours">Less than 24 hours</option>
             <option value="1-3 days" selected>1-3 days</option>
             <option value="4-7 days">4-7 days</option>
-            <option value="More than 1 week">More than 1 week</option>
           </select>
         </div>
       </div>
@@ -302,12 +185,20 @@
     <!-- Results Display -->
     <div id="result-card" class="card hidden">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; border-bottom: 1px solid var(--card-border); padding-bottom: 0.75rem;">
-        <h2 style="font-size: 1.25rem; color: #fff;">MediGuide Analysis Report</h2>
+        <h2 style="font-size: 1.25rem; color: #fff;">MediGuide Report</h2>
         <div style="display: flex; gap: 0.5rem;">
           <button class="btn-action" onclick="copyDoctorQuestions()">📋 Copy Questions</button>
-          <button class="btn-action" onclick="window.print()">🖨️ Print Report</button>
           <button class="btn-action" onclick="resetSearch()">New Search</button>
         </div>
+      </div>
+
+      <!-- Nearest Pharmacy Quick Finder -->
+      <div class="pharmacy-bar">
+        <div>
+          <strong style="color: #fff; display: block; font-size: 0.95rem;">Need Medication or Medical Supplies?</strong>
+          <span style="color: var(--text-muted); font-size: 0.85rem;">Locate open pharmacies near your current position.</span>
+        </div>
+        <button class="btn-action" style="background: var(--accent-gradient); border: none;" onclick="findNearbyPharmacies()">📍 Find Pharmacies Near Me</button>
       </div>
 
       <div class="section-box">
@@ -318,6 +209,11 @@
       <div class="section-box">
         <h3 style="color: #34d399; font-size: 1rem;">Recommended Home Care</h3>
         <ul id="home-care-list"></ul>
+      </div>
+
+      <div class="section-box">
+        <h3 style="color: #f59e0b; font-size: 1rem;">OTC Medicine Considerations</h3>
+        <ul id="otc-medicine-list"></ul>
       </div>
 
       <div class="section-box">
@@ -338,6 +234,23 @@
     function addSymptom(tag) {
       const input = document.getElementById('symptoms-input');
       input.value = input.value ? `${input.value.trim()}, ${tag}` : tag;
+    }
+
+    function findNearbyPharmacies() {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            const lat = position.coords.latitude;
+            const lng = position.coords.longitude;
+            window.open(`https://www.google.com/maps/search/pharmacy/@${lat},${lng},15z`, '_blank');
+          },
+          () => {
+            window.open('https://www.google.com/maps/search/pharmacies+near+me/', '_blank');
+          }
+        );
+      } else {
+        window.open('https://www.google.com/maps/search/pharmacies+near+me/', '_blank');
+      }
     }
 
     document.getElementById('analyze-btn').addEventListener('click', async () => {
@@ -365,15 +278,7 @@
           body: JSON.stringify({ symptoms, severity, duration })
         });
 
-        const rawText = await response.text();
-        let data;
-
-        try {
-          data = JSON.parse(rawText);
-        } catch (e) {
-          throw new Error(`Endpoint returned non-JSON (${response.status}). Verify api/recommend.js path.`);
-        }
-
+        const data = await response.json();
         if (!response.ok) throw new Error(data.error || `Error ${response.status}`);
 
         renderReport(data);
@@ -394,23 +299,19 @@
 
       document.getElementById('insight-text').innerText = data.preliminary_insight || "No insight available.";
 
-      const homeCareList = document.getElementById('home-care-list');
-      homeCareList.innerHTML = (data.home_care || []).map(item => `<li>${item}</li>`).join('');
+      document.getElementById('home-care-list').innerHTML = (data.home_care || []).map(item => `<li>${item}</li>`).join('');
+      document.getElementById('otc-medicine-list').innerHTML = (data.otc_medicine_guidance || []).map(item => `<li>${item}</li>`).join('');
 
       currentQuestions = data.doctor_questions || [];
-      const doctorList = document.getElementById('doctor-questions-list');
-      doctorList.innerHTML = currentQuestions.map(item => `<li>${item}</li>`).join('');
-
-      const redFlagsList = document.getElementById('red-flags-list');
-      redFlagsList.innerHTML = (data.red_flags || []).map(item => `<li>${item}</li>`).join('');
+      document.getElementById('doctor-questions-list').innerHTML = currentQuestions.map(item => `<li>${item}</li>`).join('');
+      document.getElementById('red-flags-list').innerHTML = (data.red_flags || []).map(item => `<li>${item}</li>`).join('');
 
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
     function copyDoctorQuestions() {
       if (currentQuestions.length === 0) return;
-      const textToCopy = "Questions for my doctor:\n" + currentQuestions.map(q => `- ${q}`).join('\n');
-      navigator.clipboard.writeText(textToCopy);
+      navigator.clipboard.writeText("Questions for my doctor:\n" + currentQuestions.map(q => `- ${q}`).join('\n'));
       alert("Doctor questions copied to clipboard!");
     }
 
