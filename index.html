@@ -112,7 +112,7 @@
       margin-bottom: 0.5rem;
     }
 
-    textarea, input {
+    textarea {
       width: 100%;
       background: rgba(10, 14, 23, 0.8);
       border: 1px solid rgba(255, 255, 255, 0.1);
@@ -121,17 +121,13 @@
       color: var(--text-main);
       font-size: 0.95rem;
       outline: none;
-      transition: border-color 0.2s, box-shadow 0.2s;
-    }
-
-    textarea:focus, input:focus {
-      border-color: var(--accent-cyan);
-      box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.2);
-    }
-
-    textarea {
       resize: vertical;
       min-height: 120px;
+    }
+
+    textarea:focus {
+      border-color: var(--accent-cyan);
+      box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.2);
     }
 
     .btn-primary {
@@ -145,18 +141,11 @@
       font-weight: 600;
       cursor: pointer;
       box-shadow: 0 4px 20px rgba(13, 148, 136, 0.4);
-      transition: transform 0.15s, box-shadow 0.15s;
-    }
-
-    .btn-primary:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 6px 25px rgba(13, 148, 136, 0.6);
     }
 
     .btn-primary:disabled {
       opacity: 0.6;
       cursor: not-allowed;
-      transform: none;
     }
 
     .result-content {
@@ -195,13 +184,13 @@
 
     <div class="disclaimer-banner">
       <h3>⚠️ Important Disclaimer</h3>
-      <p>This is AI-generated advice based on the symptoms you provide. It is <strong>NOT</strong> a substitute for professional medical consultation. Please visit a licensed doctor or pharmacist before taking any medication, especially if symptoms are severe or persistent.</p>
+      <p>This is AI-generated advice based on the symptoms you provide. It is <strong>NOT</strong> a substitute for professional medical consultation. Please visit a licensed doctor or pharmacist before taking any medication.</p>
     </div>
 
     <div id="symptom-form" class="card">
       <div class="form-group">
         <label for="symptoms-input">Describe your symptoms or health concerns in detail:</label>
-        <textarea id="symptoms-input" placeholder="e.g. Severe headache for 2 days, light sensitivity, mild fever..."></textarea>
+        <textarea id="symptoms-input" placeholder="e.g. Severe headache for 2 days, light sensitivity..."></textarea>
       </div>
 
       <button type="button" class="btn-primary" id="analyze-btn">
@@ -242,7 +231,14 @@
           body: JSON.stringify({ symptoms: symptoms })
         });
 
-        const data = await response.json();
+        const rawText = await response.text();
+        let data;
+
+        try {
+          data = JSON.parse(rawText);
+        } catch (e) {
+          throw new Error(`Endpoint returned non-JSON response (${response.status}). Ensure api/recommend.js is inside the api/ folder on GitHub.`);
+        }
 
         if (!response.ok) {
           throw new Error(data.error || `Server error ${response.status}`);
@@ -250,7 +246,7 @@
 
         document.getElementById('symptom-form').classList.add('hidden');
         document.getElementById('result-card').classList.remove('hidden');
-        document.getElementById('recommendation-output').innerText = data.recommendation || "No recommendation text received.";
+        document.getElementById('recommendation-output').innerText = data.recommendation || "No recommendation received.";
 
       } catch (error) {
         console.error("MediGuide Error:", error);
