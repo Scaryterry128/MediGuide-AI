@@ -2,23 +2,26 @@ export const config = {
   runtime: 'edge',
 };
 
-const SYSTEM_PROMPT = `You are MediGuide, an empathetic AI health and symptom advisor.
-Provide structured, preliminary health guidance based on user-described symptoms.
+const SYSTEM_PROMPT = `You are MediGuide AI, an empathetic health and symptom advisor.
+Evaluate user symptoms, severity, and duration to provide structured preliminary health guidance.
 
-RULES & FORMATTING:
-1. ALWAYS start with a clear notice that you are an AI, not a licensed medical professional.
-2. Structure your response into 4 distinct Markdown sections:
-   - **Preliminary Insight**: General overview of potential non-emergency causes.
-   - **Recommended Next Steps**: Home care, hydration, or lifestyle measures.
-   - **Questions for Your Doctor**: Key details the user should mention to a physician.
-   - **🚨 Red Flag Symptoms**: Emergency warning signs that require immediate urgent care.
-3. Keep the tone calm, objective, clear, and reassuring.`;
+RULES:
+1. Return strictly valid JSON with no markdown wrapping.
+2. Provide practical, non-emergency preliminary insights and safe home care.
+3. List explicit questions for doctor visits and crucial emergency red flags.
+
+OUTPUT JSON FORMAT ONLY:
+{
+  "preliminary_insight": "General overview of potential non-emergency causes based on symptoms.",
+  "home_care": ["Safe step 1", "Safe step 2"],
+  "doctor_questions": ["Question 1", "Question 2"],
+  "red_flags": ["Emergency sign 1", "Emergency sign 2"]
+}`;
 
 const MODEL_CANDIDATES = [
   "llama-3.3-70b-versatile",
   "llama-3.1-8b-instant",
   "openai/gpt-oss-20b",
-  "openai/gpt-oss-120b",
   "qwen/qwen3-32b"
 ];
 
@@ -42,20 +45,18 @@ export default async function handler(request) {
     }
 
     const apiKey = rawApiKey.trim();
-    const userContent = (
-      body.symptoms || 
-      body.prompt || 
-      body.query || 
-      body.message || 
-      ""
-    ).toString().trim();
+    const symptoms = (body.symptoms || body.prompt || "").toString().trim();
+    const severity = body.severity || "Moderate";
+    const duration = body.duration || "1-3 days";
 
-    if (!userContent) {
+    if (!symptoms) {
       return new Response(
-        JSON.stringify({ error: 'Please provide symptom details before submitting.' }), 
+        JSON.stringify({ error: 'Please describe your symptoms before requesting analysis.' }), 
         { status: 400, headers: { 'Content-Type': 'application/json' } }
       );
     }
+
+    const userPrompt = `Symptoms: ${symptoms}\nSeverity: ${severity}\nDuration: ${duration}`;
 
     let selectedModel = MODEL_CANDIDATES[0];
     try {
@@ -81,8 +82,9 @@ export default async function handler(request) {
         model: modelId,
         messages: [
           { role: "system", content: SYSTEM_PROMPT },
-          { role: "user", content: userContent }
+          { role: "user", content: userPrompt }
         ],
+        response_format: { type: "json_object" },
         temperature: 0.5,
         max_tokens: 1500
       };
@@ -97,7 +99,6 @@ export default async function handler(request) {
       });
 
       if (groqRes.ok) break;
-
       errText = await groqRes.text();
       if (groqRes.status !== 404 && !errText.includes('model_not_found')) break;
     }
@@ -109,10 +110,12 @@ export default async function handler(request) {
       );
     }
 
-    const data = await groqRes.json();
-    const recommendation = data.choices?.[0]?.message?.content || 'No recommendation generated.';
+    const groqData = await groqRes.json();
+    const contentStr = groqData.choices?.[0]?.message?.content || '{}';
+    const cleanedContent = contentStr.replace(/```json|```/g, '').trim();
+    const resultJson = JSON.parse(cleanedContent);
 
-    return new Response(JSON.stringify({ recommendation }), {
+    return new Response(JSON.stringify(resultJson), {
       status: 200,
       headers: { 'Content-Type': 'application/json' }
     });
