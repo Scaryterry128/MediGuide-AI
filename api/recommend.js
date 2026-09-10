@@ -2,60 +2,40 @@ export const config = {
   runtime: 'edge',
 };
 
-const SYSTEM_PROMPT = `You are a specialized medical assistant for the Indian pharmaceutical market. 
-Your goal is to analyze symptoms and recommend EXCLUSIVELY Indian medicine names (Generic & Top Indian Brands like Cipla, Mankind, Sun Pharma, Dr. Reddy's, etc.) that are readily available in local Indian pharmacies.
+const SYSTEM_PROMPT = `You are an AI Recommendation Engine & Master Life Scheduler. User gives daily constraints, available hours, and goals.
+RULES:
+1. "time_management": Evaluate constraints vs free time. Output daily_schedule array breaking down hours for chores and exact hours per goal.
+2. For each "goal":
+- "analysis": Evaluate it independently.
+- "daily_plan": Keep daily plan concise (maximum 10 key actionable days).
+- "gadgets": Construct explicit search URLs (e.g. amazon.com/s?k=microphone).
+- "learning": Provide specific Youtube Search URLs & websites.
+- "post_mastery": Provide jobs, monetization tactics.
+OUTPUT RAW JSON MATCHING:
+{"time_management":{"evaluation":"...","daily_schedule":[{"activity":"...","hours":0}]},"goals":[{"goal_number":1,"goal_name":"...","analysis":{"verdict":"Good ✅","phase_duration":"X Days","explanation":"...","breakdown":["..."]},"guide":{"steps":["..."],"milestones":["..."]},"daily_plan":[{"day":"Day 1","action":"..."}],"gadgets":[{"name":"","price_guess":"","url":"","platform":"","reason":""}],"learning":{"channels":[{"name":"","url":"","description":""}],"videos":[{"title":"","url":""}],"websites":[{"name":"","url":""}]},"post_mastery":{"applications":[""],"monetization":[""],"next_steps":[""]}}]}`;
 
-Your response MUST be ONLY the JSON object, nothing else.
-
-Rules:
-1. Identify the likely condition/illness.
-2. Recommend 1-3 medicines available ONLY in the Indian market.
-3. Provide precise dosage, frequency, and timing.
-4. Provide estimated price in INR (e.g. ₹40 - ₹60).
-5. Specify availability: "Common", "Rare", or "Prescription needed".
-6. Add a professional substitution note specifically for the Indian context.
-7. Categorize the illness (e.g. Viral, Bacterial, Allergy) and determine severity.
-
-JSON Schema:
-{
-  "condition": "Likely Illness Name",
-  "description": "Brief explanation",
-  "severity": "Mild | Moderate | Severe",
-  "category": "Category",
-  "substitution_note": "Medical advice on Indian substitutions",
-  "medicines": [
-    {
-      "generic_name": "Generic Name (e.g., Paracetamol)",
-      "brand_name": "Indian Brand (e.g., Crocin, Dolo 650)",
-      "action": "What it does",
-      "dosage": "Dosage Info",
-      "frequency": "Frequency",
-      "timing": "Timing",
-      "price_inr": "₹ Range",
-      "availability": "Status"
-    }
-  ]
-}`;
+// List of supported Groq production models in order of priority
+const MODEL_CANDIDATES = [
+  "llama-3.1-8b-instant",
+  "llama-3.3-70b-versatile",
+  "openai/gpt-oss-20b",
+  "openai/gpt-oss-120b",
+  "qwen/qwen3-32b",
+  "meta-llama/llama-4-scout-17b-16e-instruct"
+];
 
 export default async function handler(request) {
   if (request.method !== 'POST') {
     return new Response(
-      JSON.stringify({ error: 'Method not allowed. Use POST.' }), 
+      JSON.stringify({ error: 'Method not allowed' }), 
       { status: 405, headers: { 'Content-Type': 'application/json' } }
     );
   }
 
   try {
-    const { symptoms } = await request.json();
-
-    if (!symptoms || typeof symptoms !== 'string' || symptoms.trim().length < 3) {
-      return new Response(
-        JSON.stringify({ error: 'Please provide a valid symptoms description.' }), 
-        { status: 400, headers: { 'Content-Type': 'application/json' } }
-      );
-    }
-
+    const { prompt } = await request.json();
     const rawApiKey = process.env.GROQ_API_KEY;
+
     if (!rawApiKey) {
       return new Response(
         JSON.stringify({ error: 'Missing GROQ_API_KEY in Vercel Environment Variables.' }), 
@@ -65,40 +45,80 @@ export default async function handler(request) {
 
     const apiKey = rawApiKey.trim();
 
-    const payload = {
-      model: "llama-3.3-70b-versatile",
-      messages: [
-        { role: "system", content: SYSTEM_PROMPT },
-        { role: "user", content: symptoms.trim().substring(0, 1000) }
-      ],
-      response_format: { type: "json_object" },
-      temperature: 0.2,
-      max_tokens: 2048
-    };
+    // 1. Query Groq /v1/models endpoint to identify accessible models for this API Key
+    let selectedModel = MODEL_CANDIDATES[0];
+    try {
+      const modelsRes = await fetch('https://api.groq.com/openai/v1/models', {
+        headers: { 'Authorization': `Bearer ${apiKey}` }
+      });
+      if (modelsRes.ok) {
+        const modelsData = await modelsRes.json();
+        const availableIds = (modelsData.data || []).map(m => m.id);
+        
+        // Pick first model candidate present in account's accessible list
+        const match = MODEL_CANDIDATES.find(c => availableIds.includes(c));
+        if (match) {
+          selectedModel = match;
+        } else if (availableIds.length > 0) {
+          const textModel = availableIds.find(id => !id.includes('whisper') && !id.includes('guard') && !id.includes('orpheus'));
+          if (textModel) selectedModel = textModel;
+        }
+      }
+    } catch (e) {
+      console.warn('Could not auto-detect Groq models, using candidate fallback list.', e);
+    }
 
-    const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`
-      },
-      body: JSON.stringify(payload)
-    });
+    // 2. Loop through candidate models if model_not_found occurs
+    let groqRes;
+    let errText = '';
+    const modelsToTry = [selectedModel, ...MODEL_CANDIDATES.filter(m => m !== selectedModel)];
 
-    if (!groqRes.ok) {
-      const errText = await groqRes.text();
+    for (const modelId of modelsToTry) {
+      const payload = {
+        model: modelId,
+        messages: [
+          { role: "system", content: SYSTEM_PROMPT },
+          { role: "user", content: prompt }
+        ],
+        response_format: { type: "json_object" },
+        temperature: 0.7,
+        max_tokens: 2000
+      };
+
+      groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (groqRes.ok) {
+        break; // Request succeeded
+      }
+
+      errText = await groqRes.text();
+      
+      // Stop looping on authorization/unrelated errors
+      if (groqRes.status !== 404 && !errText.includes('model_not_found')) {
+        break;
+      }
+    }
+
+    if (!groqRes || !groqRes.ok) {
       return new Response(
-        JSON.stringify({ error: `Groq API returned status ${groqRes.status}: ${errText}` }), 
-        { status: groqRes.status, headers: { 'Content-Type': 'application/json' } }
+        JSON.stringify({ error: `Groq API error (${groqRes?.status || 500}): ${errText}` }), 
+        { status: groqRes?.status || 500, headers: { 'Content-Type': 'application/json' } }
       );
     }
 
     const groqData = await groqRes.json();
     const contentStr = groqData.choices?.[0]?.message?.content || '{}';
     const cleanedContent = contentStr.replace(/```json|```/g, '').trim();
-    const recommendationData = JSON.parse(cleanedContent);
+    const scheduleData = JSON.parse(cleanedContent);
 
-    return new Response(JSON.stringify(recommendationData), {
+    return new Response(JSON.stringify(scheduleData), {
       status: 200,
       headers: { 'Content-Type': 'application/json' }
     });
