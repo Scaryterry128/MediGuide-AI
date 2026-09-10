@@ -3,255 +3,516 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>MediGuide AI – Smart Medical Recommendation Assistant</title>
-  <meta name="description" content="MediGuide AI helps you identify illnesses from symptoms and provides detailed medicine recommendations with dosage, timing, and pricing in INR." />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css" />
+  <title>Your Life Decider — AI Daily Schedule Generator</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚡</text></svg>">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <style>
-    @media print {
-      body { background: white; color: black; }
-      .disclaimer-banner, .header-badges, .input-section, .loading-section, .results-toolbar, .footer { display: none !important; }
-      .medicine-card { border: 1px solid #ccc; box-shadow: none; break-inside: avoid; }
+    :root {
+      --bg-dark: #0d0f17;
+      --card-bg: rgba(22, 26, 40, 0.75);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --accent-purple: #7c3aed;
+      --accent-blue: #3b82f6;
+      --accent-gradient: linear-gradient(135deg, #7c3aed 0%, #3b82f6 100%);
+      --text-main: #f3f4f6;
+      --text-muted: #9ca3af;
+      --radius: 16px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      background-image: 
+        radial-gradient(at 10% 10%, rgba(124, 58, 237, 0.15) 0px, transparent 50%),
+        radial-gradient(at 90% 90%, rgba(59, 130, 246, 0.12) 0px, transparent 50%);
+      background-attachment: fixed;
+      color: var(--text-main);
+      min-height: 100vh;
+      padding: 2rem 1rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 920px;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 2.5rem;
+    }
+
+    header h1 {
+      font-size: 2.5rem;
+      font-weight: 700;
+      background: var(--accent-gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 0.5rem;
+    }
+
+    header p {
+      color: var(--text-muted);
+      font-size: 1rem;
+    }
+
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      backdrop-filter: blur(12px);
+      border-radius: var(--radius);
+      padding: 1.75rem;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+    }
+
+    .card-title {
+      font-size: 1.2rem;
+      font-weight: 600;
+      margin-bottom: 1.25rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      color: #fff;
+    }
+
+    .form-group {
+      margin-bottom: 1.25rem;
+    }
+
+    label {
+      display: block;
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      margin-bottom: 0.5rem;
+    }
+
+    input, textarea {
+      width: 100%;
+      background: rgba(15, 18, 28, 0.8);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 10px;
+      padding: 0.75rem 1rem;
+      color: var(--text-main);
+      font-size: 0.95rem;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    input:focus, textarea:focus {
+      border-color: var(--accent-purple);
+      box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.2);
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+
+    @media (max-width: 640px) {
+      .row {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .goal-card {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px dashed rgba(255, 255, 255, 0.15);
+      border-radius: 12px;
+      padding: 1.25rem;
+      margin-bottom: 1rem;
+      position: relative;
+    }
+
+    .btn-remove {
+      background: rgba(239, 68, 68, 0.2);
+      color: #ef4444;
+      border: none;
+      border-radius: 6px;
+      padding: 0.25rem 0.6rem;
+      font-size: 0.8rem;
+      cursor: pointer;
+    }
+
+    .btn-secondary {
+      width: 100%;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px dashed var(--accent-purple);
+      color: #a78bfa;
+      padding: 0.75rem;
+      border-radius: 10px;
+      font-weight: 500;
+      font-size: 0.9rem;
+      cursor: pointer;
+      margin-top: 0.5rem;
+    }
+
+    .btn-primary {
+      width: 100%;
+      background: var(--accent-gradient);
+      border: none;
+      color: white;
+      padding: 1rem;
+      border-radius: 12px;
+      font-size: 1.05rem;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 4px 20px rgba(124, 58, 237, 0.4);
+      margin-top: 1rem;
+    }
+
+    .btn-primary:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .day-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.75rem;
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      padding: 0.75rem 1rem;
+      border-radius: 8px;
+      margin-bottom: 0.5rem;
+      cursor: pointer;
+    }
+
+    .day-checkbox {
+      accent-color: var(--accent-purple);
+      width: 18px;
+      height: 18px;
+      margin-top: 2px;
+      cursor: pointer;
+    }
+
+    .completed-day {
+      text-decoration: line-through;
+      opacity: 0.45;
+    }
+
+    .resource-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 0.4rem 0.75rem;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      margin-right: 0.5rem;
+      margin-bottom: 0.5rem;
+      text-decoration: none;
+      color: #93c5fd;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 0.25rem 0.6rem;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      background: rgba(124, 58, 237, 0.2);
+      color: #c4b5fd;
+    }
+
+    .link-btn {
+      color: var(--accent-blue);
+      text-decoration: none;
+      font-size: 0.85rem;
+    }
+
+    .spinner {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 3px solid rgba(255, 255, 255, 0.3);
+      border-radius: 50%;
+      border-top-color: #fff;
+      animation: spin 0.8s ease-in-out infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .hidden {
+      display: none !important;
     }
   </style>
 </head>
 <body>
-  <!-- Decorative Background Blobs -->
-  <div class="bg-blob blob-1"></div>
-  <div class="bg-blob blob-2"></div>
-  <div class="bg-blob blob-3"></div>
 
-  <!-- Disclaimer Banner -->
-  <div class="disclaimer-banner" id="disclaimerBanner">
-    <div class="disclaimer-inner">
-      <span class="disclaimer-icon">⚕️</span>
-      <span>MediGuide AI provides <strong>AI-generated suggestions only</strong>. Always consult a licensed doctor before taking any medication. This is not a substitute for professional medical advice.</span>
-      <button class="disclaimer-close" id="disclaimerClose" aria-label="Close disclaimer">✕</button>
-    </div>
-  </div>
+  <div class="container">
+    <header>
+      <h1>Your Life Decider</h1>
+      <p>AI-Powered Daily Schedule & Mastery Planner</p>
+    </header>
 
-  <!-- Header -->
-  <header class="header">
-    <div class="container">
-      <div class="logo">
-        <div class="logo-icon">
-          <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <circle cx="20" cy="20" r="20" fill="url(#logoGrad)"/>
-            <path d="M20 10v20M10 20h20" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
-            <defs>
-              <linearGradient id="logoGrad" x1="0" y1="0" x2="40" y2="40">
-                <stop offset="0%" stop-color="#22d3ee"/>
-                <stop offset="100%" stop-color="#8b5cf6"/>
-              </linearGradient>
-            </defs>
-          </svg>
-        </div>
-        <div>
-          <h1 class="logo-title">MediGuide <span>AI</span></h1>
-          <p class="logo-subtitle">Powered by Groq AI · Llama 3.3</p>
-        </div>
+    <div id="planner-form" class="card">
+      <div class="card-title">
+        <span>1. Daily Constraints & Available Time</span>
       </div>
-      <div class="header-badges">
-        <button class="theme-toggle" id="themeToggle" aria-label="Toggle dark/light mode">
-          <span class="theme-icon">🌙</span>
-        </button>
-        <button class="theme-toggle" id="settingsToggle" aria-label="Open security settings">
-          <span class="settings-icon">⚙️</span>
-        </button>
-        <span class="badge badge-ai">🤖 AI Assisted</span>
-        <span class="badge badge-india">🇮🇳 INR Pricing</span>
-      </div>
-    </div>
-  </header>
 
-  <!-- Main Content -->
-  <main class="main">
-    <div class="container">
-
-      <!-- Hero Section -->
-      <section class="hero">
-        <h2 class="hero-title">Describe Your Symptoms,<br/>Get Instant Medical Guidance</h2>
-        <p class="hero-subtitle">Our AI analyzes your symptoms and recommends medicines with dosage, timing & pricing — all in seconds.</p>
-      </section>
-
-      <!-- Input Card -->
-      <section class="input-section" id="inputSection">
-        <div class="input-card">
-          <div class="input-card-header">
-            <div class="input-card-icon">🩺</div>
-            <div>
-              <h3>Tell us your symptoms</h3>
-              <p>Be as detailed as possible for better recommendations</p>
-            </div>
-          </div>
-
-          <!-- Symptoms Input -->
-          <div class="form-group">
-            <label for="symptomsInput" class="form-label">
-              <span class="label-icon">📋</span>
-              Your Symptoms
-            </label>
-            <textarea
-              id="symptomsInput"
-              class="form-textarea"
-              placeholder="I have a headache, fever, and body ache since 2 days..."
-              rows="5"
-              maxlength="1000"
-            ></textarea>
-            <div id="autocompleteSuggestions" class="autocomplete-suggestions"></div>
-            <div class="char-counter"><span id="charCount">0</span>/1000</div>
-          </div>
-
-          <!-- Quick Symptom Chips -->
-          <div class="quick-symptoms">
-            <span class="quick-label">Quick add:</span>
-            <div id="quickSymptomsList" class="quick-symptoms-list">
-              <!-- Dynamically populated -->
-            </div>
-          </div>
-
-          <button class="submit-btn" id="submitBtn">
-            <span class="btn-text">
-              <span class="btn-icon">🔍</span>
-              Get Medicine Guide
-            </span>
-            <div class="btn-shimmer"></div>
-          </button>
-        </div>
-
-        <!-- Recent Searches -->
-        <div class="recent-searches" id="recentSearches" style="display:none;">
-          <h4 class="recent-title">🕐 Recent Searches</h4>
-          <div class="recent-list" id="recentList"></div>
-          <button class="clear-history-btn" id="clearHistory">Clear History</button>
-        </div>
-      </section>
-
-      <!-- Loading State -->
-      <section class="loading-section" id="loadingSection" style="display:none;">
-        <div class="loading-card">
-          <div class="pulse-ring"></div>
-          <div class="dna-spinner">
-            <div class="dna-bar"></div>
-            <div class="dna-bar"></div>
-            <div class="dna-bar"></div>
-            <div class="dna-bar"></div>
-            <div class="dna-bar"></div>
-          </div>
-          <p class="loading-title">AI is analyzing your symptoms...</p>
-          <p class="loading-sub">Consulting medical databases and generating personalized recommendations</p>
-          <div class="loading-progress">
-            <div class="progress-bar" id="progressBar"></div>
-          </div>
-          <div class="loading-steps">
-            <span class="step active" id="step1">✓ Parsing symptoms</span>
-            <span class="step" id="step2">⋯ Identifying condition</span>
-            <span class="step" id="step3">⋯ Finding medicines</span>
-          </div>
-        </div>
-      </section>
-
-      <!-- Results Section -->
-      <section class="results-section" id="resultsSection" style="display:none;">
-        <!-- Action Toolbar -->
-        <div class="results-toolbar">
-          <div class="results-toolbar-left">
-            <span class="results-label">📊 Your Medical Guide</span>
-          </div>
-          <div class="results-toolbar-right">
-            <button class="tool-btn" id="copyBtn" title="Copy to clipboard">
-              <span class="tool-icon">📋</span> Copy
-            </button>
-            <button class="tool-btn" id="printBtn" title="Save as PDF / Print">
-              <span class="tool-icon">🖨️</span> Print / PDF
-            </button>
-            <button class="tool-btn tool-btn-location" id="pharmacyBtn" title="Find nearest pharmacy">
-              <span class="tool-icon">📍</span> Find Pharmacy
-            </button>
-            <button class="tool-btn tool-btn-secondary" id="newSearchBtn" title="New search">
-              <span class="tool-icon">↩</span> New Search
-            </button>
-          </div>
-        </div>
-
-        <!-- Condition Card -->
-        <div class="condition-card" id="conditionCard">
-          <div class="condition-badge">Detected Condition</div>
-          <h2 class="condition-name" id="conditionName">—</h2>
-          <p class="condition-description" id="conditionDescription">—</p>
-          <div class="condition-meta" id="conditionMeta"></div>
-        </div>
-
-        <!-- Substitution Note -->
-        <div class="substitution-note" id="substitutionNote" style="display:none;">
-          <span class="sub-icon">💡</span>
-          <span id="substitutionText">If Medicine 1 is unavailable, use Medicine 2 or 3 as alternatives.</span>
-        </div>
-
-        <!-- Medicine Cards Grid -->
-        <div class="medicines-grid" id="medicinesGrid"></div>
-
-        <!-- Final Disclaimer -->
-        <div class="final-disclaimer">
-          <div class="final-disclaimer-icon">⚠️</div>
-          <div>
-            <strong>Important Disclaimer</strong>
-            <p>This is AI-generated advice based on the symptoms you provided. It is NOT a substitute for professional medical consultation. Please visit a licensed doctor or pharmacist before taking any medication, especially if symptoms are severe or persistent.</p>
-          </div>
-        </div>
-
-        <!-- Error State (hidden by default) -->
-        <div class="error-card" id="errorCard" style="display:none;">
-          <div class="error-icon">❌</div>
-          <h3 class="error-title">Something went wrong</h3>
-          <p class="error-message" id="errorMessage">Unable to fetch recommendations. Please try again.</p>
-          <button class="error-retry-btn" id="retryBtn">Try Again</button>
-        </div>
-      </section>
-
-    </div>
-  </main>
-
-  <!-- Footer -->
-  <footer class="footer">
-    <div class="container">
-      <p>MediGuide AI &copy; 2026 — Built with ❤️ using Groq AI &nbsp;|&nbsp; <strong>Not a substitute for professional medical advice</strong></p>
-    </div>
-  </footer>
-
-  <!-- Security & Settings Modal -->
-  <div class="modal-overlay" id="settingsModal">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h3><span class="label-icon">🛡️</span> Privacy & History</h3>
-        <button class="modal-close" id="closeSettings">✕</button>
-      </div>
-      
-      <div class="modal-body">
-        <div class="settings-row">
-          <div>
-            <label class="form-label" style="margin-bottom: 2px;">Local Search History</label>
-            <p style="font-size: 0.75rem; color: var(--text-secondary); opacity: 0.8;">Your searches are stored locally in this browser.</p>
-          </div>
-        </div>
-
-        <hr class="modal-divider"/>
-
+      <div class="row">
         <div class="form-group">
-          <label class="form-label">Clear All Local Data</label>
-          <p style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 12px;">Wipes all history, themes, and personal settings from this browser.</p>
-          <button class="btn-danger" id="clearAllData">🚨 Clear All Data</button>
+          <label for="constraints">Daily Constraints / Routine</label>
+          <input type="text" id="constraints" placeholder="e.g. Work 9-5, Sleep 8h, Chores 2h" value="Work 9 AM - 5 PM, Sleep 8 hours">
+        </div>
+        <div class="form-group">
+          <label for="free-hours">Free Hours Dedicated for Goals</label>
+          <input type="number" id="free-hours" min="1" max="16" value="4">
         </div>
       </div>
-      
-      <div class="modal-footer">
-        <p>🔒 All your data stays locally on your device. Powered by Vercel.</p>
+
+      <div class="card-title" style="margin-top: 1.5rem;">
+        <span>2. Your Goals</span>
       </div>
+
+      <div id="goals-container"></div>
+
+      <button type="button" class="btn-secondary" id="add-goal-btn">+ Add Another Goal</button>
+
+      <button type="button" class="btn-primary" id="generate-btn">
+        <span id="btn-text">Generate Life Schedule</span>
+        <span id="btn-spinner" class="spinner hidden"></span>
+      </button>
+    </div>
+
+    <div id="output-container" class="hidden">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <h2 style="font-size: 1.5rem; color: #fff;">Your Personal Life Schedule</h2>
+        <button class="btn-secondary" style="width: auto; padding: 0.5rem 1rem;" onclick="resetForm()">Edit Goals</button>
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <span>Time Management Breakdown</span>
+        </div>
+        <div style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: 12px; padding: 1rem; margin-bottom: 1rem; color: #34d399;" id="time-evaluation"></div>
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 0.75rem;" id="daily-schedule-list"></div>
+      </div>
+
+      <div id="rendered-goals"></div>
     </div>
   </div>
 
-  <script src="app.js"></script>
+  <script>
+    let goalCount = 0;
+
+    function createGoalCard(goalData = { name: 'Boxing & Fitness', experience: 'Beginner', duration: 14 }) {
+      if (goalCount >= 10) return;
+      goalCount++;
+      
+      const container = document.getElementById('goals-container');
+      const goalId = `goal-${Date.now()}-${goalCount}`;
+
+      const card = document.createElement('div');
+      card.className = 'goal-card';
+      card.id = goalId;
+      card.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+          <strong style="color: #a78bfa; font-size: 0.9rem;">Goal #${goalCount}</strong>
+          ${goalCount > 1 ? `<button type="button" class="btn-remove" onclick="removeGoal('${goalId}')">Remove</button>` : ''}
+        </div>
+        <div class="form-group">
+          <label>Goal Name</label>
+          <input type="text" class="goal-name" placeholder="e.g. Boxing, Full-Stack Web Dev" value="${goalData.name}" required>
+        </div>
+        <div class="row">
+          <div class="form-group">
+            <label>Past Experience / Notes</label>
+            <input type="text" class="goal-exp" placeholder="e.g. Total beginner" value="${goalData.experience}">
+          </div>
+          <div class="form-group">
+            <label>Target Duration (Days)</label>
+            <input type="number" class="goal-duration" min="1" max="365" value="${goalData.duration}">
+          </div>
+        </div>
+      `;
+      container.appendChild(card);
+    }
+
+    function removeGoal(id) {
+      const card = document.getElementById(id);
+      if (card) {
+        card.remove();
+        goalCount--;
+      }
+    }
+
+    document.getElementById('add-goal-btn').addEventListener('click', () => createGoalCard({ name: '', experience: '', duration: 14 }));
+    createGoalCard();
+
+    document.getElementById('generate-btn').addEventListener('click', async () => {
+      const btnText = document.getElementById('btn-text');
+      const btnSpinner = document.getElementById('btn-spinner');
+      const generateBtn = document.getElementById('generate-btn');
+
+      const constraints = document.getElementById('constraints').value;
+      const freeHours = document.getElementById('free-hours').value;
+
+      const goalCards = document.querySelectorAll('.goal-card');
+      const goals = [];
+
+      goalCards.forEach((card, idx) => {
+        const name = card.querySelector('.goal-name').value;
+        const experience = card.querySelector('.goal-exp').value;
+        const duration = card.querySelector('.goal-duration').value;
+
+        if (name.trim()) {
+          goals.push({
+            goal_number: idx + 1,
+            name: name,
+            experience: experience || 'None',
+            duration: duration || 14
+          });
+        }
+      });
+
+      if (goals.length === 0) {
+        alert("Please specify at least one goal.");
+        return;
+      }
+
+      const promptPayload = `Daily Constraints: ${constraints}. Free Hours Available for Goals: ${freeHours} hours per day. Goals: ${JSON.stringify(goals)}`;
+
+      btnText.innerText = "Generating Schedule...";
+      btnSpinner.classList.remove('hidden');
+      generateBtn.disabled = true;
+
+      try {
+        const response = await fetch('/api/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ prompt: promptPayload })
+        });
+
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || `Status ${response.status}`);
+
+        renderResults(result);
+
+      } catch (error) {
+        console.error("Error:", error);
+        alert(`Error: ${error.message}`);
+      } finally {
+        btnText.innerText = "Generate Life Schedule";
+        btnSpinner.classList.add('hidden');
+        generateBtn.disabled = false;
+      }
+    });
+
+    function renderResults(data) {
+      document.getElementById('planner-form').classList.add('hidden');
+      document.getElementById('output-container').classList.remove('hidden');
+
+      const timeMgmt = data.time_management || {};
+      document.getElementById('time-evaluation').innerText = timeMgmt.evaluation || "Schedule created.";
+
+      const scheduleList = document.getElementById('daily-schedule-list');
+      scheduleList.innerHTML = '';
+      (timeMgmt.daily_schedule || []).forEach(item => {
+        const div = document.createElement('div');
+        div.style.cssText = "background: rgba(255,255,255,0.03); border-left: 3px solid var(--accent-blue); padding: 0.75rem; border-radius: 6px;";
+        div.innerHTML = `<strong style="display:block; color:#fff;">${item.activity}</strong><span style="color:var(--text-muted); font-size:0.85rem;">${item.hours} hrs / day</span>`;
+        scheduleList.appendChild(div);
+      });
+
+      const goalsContainer = document.getElementById('rendered-goals');
+      goalsContainer.innerHTML = '';
+
+      (data.goals || []).forEach(g => {
+        const card = document.createElement('div');
+        card.className = 'card';
+
+        const dailyPlanHtml = (g.daily_plan || []).map(dp => `
+          <label class="day-item">
+            <input type="checkbox" class="day-checkbox" onchange="this.nextElementSibling.classList.toggle('completed-day', this.checked)">
+            <span><strong style="color: #a78bfa;">${dp.day}:</strong> ${dp.action}</span>
+          </label>
+        `).join('');
+
+        const youtubeSearchUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(g.goal_name + ' tutorial')}`;
+        const youtubeChannels = (g.learning?.channels || []).map(ch => `
+          <a class="resource-badge" href="${ch.url || `https://www.youtube.com/results?search_query=${encodeURIComponent(ch.name)}`}" target="_blank">
+            ▶️ <strong>${ch.name}</strong> (${ch.description || 'Channel'})
+          </a>
+        `).join('');
+
+        const youtubeVideos = (g.learning?.videos || []).map(vid => `
+          <a class="resource-badge" href="${vid.url || `https://www.youtube.com/results?search_query=${encodeURIComponent(vid.title)}`}" target="_blank">
+            🎬 ${vid.title}
+          </a>
+        `).join('');
+
+        const websites = (g.learning?.websites || []).map(web => `
+          <a class="resource-badge" href="${web.url && web.url.startsWith('http') ? web.url : `https://${web.url || 'google.com'}`}" target="_blank">
+            🌐 <strong>${web.name}</strong>
+          </a>
+        `).join('');
+
+        const gadgetsHtml = (g.gadgets || []).map(gadget => `
+          <li style="margin-bottom: 0.5rem; color: var(--text-muted); font-size: 0.9rem;">
+            <strong style="color: #fff;">${gadget.name}</strong> (${gadget.price_guess || 'N/A'}) - ${gadget.reason || ''}
+            <br>
+            <a class="link-btn" href="https://www.amazon.com/s?k=${encodeURIComponent(gadget.name)}" target="_blank">🛒 Buy/Search on ${gadget.platform || 'Amazon'} &rarr;</a>
+          </li>
+        `).join('');
+
+        const monetizationHtml = (g.post_mastery?.monetization || []).map(m => `<li>${m}</li>`).join('');
+
+        card.innerHTML = `
+          <div class="card-title">
+            <span>Goal #${g.goal_number}: ${g.goal_name}</span>
+            <span class="badge">${g.analysis?.verdict || 'Active'}</span>
+          </div>
+          <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1rem;">
+            ${g.analysis?.explanation || ''} <strong>Phase Duration:</strong> ${g.analysis?.phase_duration || ''}
+          </p>
+
+          <h4 style="color: #fff; margin: 1.25rem 0 0.75rem 0;">Interactive Daily Checklist</h4>
+          <div style="margin-bottom: 1.5rem;">${dailyPlanHtml || '<p style="color:var(--text-muted);">No daily items generated.</p>'}</div>
+
+          <h4 style="color: #fff; margin: 1.25rem 0 0.75rem 0;">Learning & Video Resources</h4>
+          <div style="margin-bottom: 1.25rem;">
+            ${youtubeChannels}
+            ${youtubeVideos}
+            ${websites}
+            <a class="resource-badge" href="${youtubeSearchUrl}" target="_blank">🔍 Search More YouTube Tutorials &rarr;</a>
+          </div>
+
+          ${gadgetsHtml ? `
+            <h4 style="color: #fff; margin: 1.25rem 0 0.75rem 0;">Recommended Gear</h4>
+            <ul style="padding-left: 1.25rem; margin-bottom: 1.25rem;">${gadgetsHtml}</ul>
+          ` : ''}
+
+          ${monetizationHtml ? `
+            <h4 style="color: #fff; margin: 1.25rem 0 0.75rem 0;">Monetization & Mastery Pathways</h4>
+            <ul style="padding-left: 1.25rem; color: var(--text-muted); font-size: 0.85rem;">${monetizationHtml}</ul>
+          ` : ''}
+        `;
+
+        goalsContainer.appendChild(card);
+      });
+
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function resetForm() {
+      document.getElementById('output-container').classList.add('hidden');
+      document.getElementById('planner-form').classList.remove('hidden');
+    }
+  </script>
 </body>
 </html>
