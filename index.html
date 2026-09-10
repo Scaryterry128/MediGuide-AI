@@ -44,7 +44,7 @@
 
     .container {
       width: 100%;
-      max-width: 860px;
+      max-width: 880px;
     }
 
     header {
@@ -100,6 +100,13 @@
       box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
     }
 
+    .card-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+      color: #fff;
+    }
+
     .form-group {
       margin-bottom: 1.25rem;
     }
@@ -112,7 +119,7 @@
       margin-bottom: 0.5rem;
     }
 
-    textarea {
+    textarea, select {
       width: 100%;
       background: rgba(10, 14, 23, 0.8);
       border: 1px solid rgba(255, 255, 255, 0.1);
@@ -121,13 +128,45 @@
       color: var(--text-main);
       font-size: 0.95rem;
       outline: none;
-      resize: vertical;
-      min-height: 120px;
     }
 
-    textarea:focus {
+    textarea {
+      resize: vertical;
+      min-height: 110px;
+    }
+
+    .chip-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-top: 0.5rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .chip {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: var(--accent-cyan);
+      border-radius: 20px;
+      padding: 0.35rem 0.8rem;
+      font-size: 0.825rem;
+      cursor: pointer;
+      transition: background 0.2s, border-color 0.2s;
+    }
+
+    .chip:hover {
+      background: rgba(6, 182, 212, 0.15);
       border-color: var(--accent-cyan);
-      box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.2);
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+
+    @media (max-width: 640px) {
+      .row { grid-template-columns: 1fr; }
     }
 
     .btn-primary {
@@ -143,17 +182,48 @@
       box-shadow: 0 4px 20px rgba(13, 148, 136, 0.4);
     }
 
-    .btn-primary:disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
+    .btn-action {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: #fff;
+      padding: 0.5rem 0.9rem;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      transition: background 0.2s;
     }
 
-    .result-content {
-      line-height: 1.7;
-      color: #e5e7eb;
-      font-size: 0.95rem;
-      white-space: pre-wrap;
+    .btn-action:hover {
+      background: rgba(255, 255, 255, 0.12);
     }
+
+    .section-box {
+      background: rgba(255, 255, 255, 0.02);
+      border-left: 3px solid var(--accent-cyan);
+      padding: 1rem;
+      border-radius: 8px;
+      margin-bottom: 1rem;
+    }
+
+    .red-flag-box {
+      background: rgba(239, 68, 68, 0.08);
+      border-left: 3px solid #ef4444;
+      padding: 1rem;
+      border-radius: 8px;
+      margin-bottom: 1rem;
+    }
+
+    ul {
+      padding-left: 1.25rem;
+      margin-top: 0.5rem;
+      color: var(--text-muted);
+      font-size: 0.9rem;
+    }
+
+    li { margin-bottom: 0.4rem; }
 
     .spinner {
       display: inline-block;
@@ -165,12 +235,13 @@
       animation: spin 0.8s ease-in-out infinite;
     }
 
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .hidden { display: none !important; }
 
-    .hidden {
-      display: none !important;
+    @media print {
+      body { background: white; color: black; }
+      .disclaimer-banner, #symptom-form, .btn-action { display: none !important; }
+      .card { border: none; box-shadow: none; background: transparent; }
     }
   </style>
 </head>
@@ -179,44 +250,107 @@
   <div class="container">
     <header>
       <h1>MediGuide AI</h1>
-      <p>Instant Preliminary Health Guidance & Symptom Analysis</p>
+      <p>Instant Health Insights & Doctor Visit Assistant</p>
     </header>
 
     <div class="disclaimer-banner">
-      <h3>⚠️ Important Disclaimer</h3>
-      <p>This is AI-generated advice based on the symptoms you provide. It is <strong>NOT</strong> a substitute for professional medical consultation. Please visit a licensed doctor or pharmacist before taking any medication.</p>
+      <h3>⚠️ Medical Disclaimer</h3>
+      <p>MediGuide AI provides informational recommendations only. It is <strong>NOT</strong> a substitute for professional clinical judgment. Consult a qualified medical practitioner for serious health issues.</p>
     </div>
 
     <div id="symptom-form" class="card">
       <div class="form-group">
-        <label for="symptoms-input">Describe your symptoms or health concerns in detail:</label>
-        <textarea id="symptoms-input" placeholder="e.g. Severe headache for 2 days, light sensitivity..."></textarea>
+        <label for="symptoms-input">Describe your symptoms:</label>
+        <textarea id="symptoms-input" placeholder="e.g. Throbbing headache, mild fever, fatigue since yesterday..."></textarea>
+      </div>
+
+      <label>Quick Add Symptoms:</label>
+      <div class="chip-container">
+        <button class="chip" onclick="addSymptom('Headache')">+ Headache</button>
+        <button class="chip" onclick="addSymptom('Fever & Chills')">+ Fever & Chills</button>
+        <button class="chip" onclick="addSymptom('Sore Throat')">+ Sore Throat</button>
+        <button class="chip" onclick="addSymptom('Stomach Pain')">+ Stomach Pain</button>
+        <button class="chip" onclick="addSymptom('Dizziness')">+ Dizziness</button>
+      </div>
+
+      <div class="row">
+        <div class="form-group">
+          <label for="severity">Severity Level</label>
+          <select id="severity">
+            <option value="Mild">Mild (Noticeable but manageable)</option>
+            <option value="Moderate" selected>Moderate (Disrupting routine)</option>
+            <option value="Severe">Severe (Unbearable)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="duration">Symptom Duration</label>
+          <select id="duration">
+            <option value="Less than 24 hours">Less than 24 hours</option>
+            <option value="1-3 days" selected>1-3 days</option>
+            <option value="4-7 days">4-7 days</option>
+            <option value="More than 1 week">More than 1 week</option>
+          </select>
+        </div>
       </div>
 
       <button type="button" class="btn-primary" id="analyze-btn">
-        <span id="btn-text">Get AI Health Recommendation</span>
+        <span id="btn-text">Generate Health Recommendation</span>
         <span id="btn-spinner" class="spinner hidden"></span>
       </button>
     </div>
 
+    <!-- Results Display -->
     <div id="result-card" class="card hidden">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; border-bottom: 1px solid var(--card-border); padding-bottom: 0.75rem;">
-        <h2 style="font-size: 1.25rem; color: #fff;">MediGuide Analysis</h2>
-        <button onclick="resetSearch()" style="background: transparent; border: 1px solid var(--card-border); color: var(--text-muted); padding: 0.4rem 0.8rem; border-radius: 8px; cursor: pointer;">New Search</button>
+        <h2 style="font-size: 1.25rem; color: #fff;">MediGuide Analysis Report</h2>
+        <div style="display: flex; gap: 0.5rem;">
+          <button class="btn-action" onclick="copyDoctorQuestions()">📋 Copy Questions</button>
+          <button class="btn-action" onclick="window.print()">🖨️ Print Report</button>
+          <button class="btn-action" onclick="resetSearch()">New Search</button>
+        </div>
       </div>
-      <div id="recommendation-output" class="result-content"></div>
+
+      <div class="section-box">
+        <h3 style="color: var(--accent-cyan); font-size: 1rem;">Preliminary Insight</h3>
+        <p id="insight-text" style="color: var(--text-muted); font-size: 0.9rem; margin-top: 0.4rem;"></p>
+      </div>
+
+      <div class="section-box">
+        <h3 style="color: #34d399; font-size: 1rem;">Recommended Home Care</h3>
+        <ul id="home-care-list"></ul>
+      </div>
+
+      <div class="section-box">
+        <h3 style="color: #a78bfa; font-size: 1rem;">Questions to Ask Your Doctor</h3>
+        <ul id="doctor-questions-list"></ul>
+      </div>
+
+      <div class="red-flag-box">
+        <h3 style="color: #ef4444; font-size: 1rem;">🚨 Emergency Red Flags</h3>
+        <ul id="red-flags-list" style="color: #fca5a5;"></ul>
+      </div>
     </div>
   </div>
 
   <script>
+    let currentQuestions = [];
+
+    function addSymptom(tag) {
+      const input = document.getElementById('symptoms-input');
+      input.value = input.value ? `${input.value.trim()}, ${tag}` : tag;
+    }
+
     document.getElementById('analyze-btn').addEventListener('click', async () => {
       const symptoms = document.getElementById('symptoms-input').value.trim();
+      const severity = document.getElementById('severity').value;
+      const duration = document.getElementById('duration').value;
+
       const btnText = document.getElementById('btn-text');
       const btnSpinner = document.getElementById('btn-spinner');
       const analyzeBtn = document.getElementById('analyze-btn');
 
       if (!symptoms) {
-        alert("Please describe your symptoms before requesting analysis.");
+        alert("Please describe your symptoms before submitting.");
         return;
       }
 
@@ -228,7 +362,7 @@
         const response = await fetch('/api/recommend', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ symptoms: symptoms })
+          body: JSON.stringify({ symptoms, severity, duration })
         });
 
         const rawText = await response.text();
@@ -237,26 +371,48 @@
         try {
           data = JSON.parse(rawText);
         } catch (e) {
-          throw new Error(`Endpoint returned non-JSON response (${response.status}). Ensure api/recommend.js is inside the api/ folder on GitHub.`);
+          throw new Error(`Endpoint returned non-JSON (${response.status}). Verify api/recommend.js path.`);
         }
 
-        if (!response.ok) {
-          throw new Error(data.error || `Server error ${response.status}`);
-        }
+        if (!response.ok) throw new Error(data.error || `Error ${response.status}`);
 
-        document.getElementById('symptom-form').classList.add('hidden');
-        document.getElementById('result-card').classList.remove('hidden');
-        document.getElementById('recommendation-output').innerText = data.recommendation || "No recommendation received.";
+        renderReport(data);
 
       } catch (error) {
         console.error("MediGuide Error:", error);
         alert(`Error: ${error.message}`);
       } finally {
-        btnText.innerText = "Get AI Health Recommendation";
+        btnText.innerText = "Generate Health Recommendation";
         btnSpinner.classList.add('hidden');
         analyzeBtn.disabled = false;
       }
     });
+
+    function renderReport(data) {
+      document.getElementById('symptom-form').classList.add('hidden');
+      document.getElementById('result-card').classList.remove('hidden');
+
+      document.getElementById('insight-text').innerText = data.preliminary_insight || "No insight available.";
+
+      const homeCareList = document.getElementById('home-care-list');
+      homeCareList.innerHTML = (data.home_care || []).map(item => `<li>${item}</li>`).join('');
+
+      currentQuestions = data.doctor_questions || [];
+      const doctorList = document.getElementById('doctor-questions-list');
+      doctorList.innerHTML = currentQuestions.map(item => `<li>${item}</li>`).join('');
+
+      const redFlagsList = document.getElementById('red-flags-list');
+      redFlagsList.innerHTML = (data.red_flags || []).map(item => `<li>${item}</li>`).join('');
+
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function copyDoctorQuestions() {
+      if (currentQuestions.length === 0) return;
+      const textToCopy = "Questions for my doctor:\n" + currentQuestions.map(q => `- ${q}`).join('\n');
+      navigator.clipboard.writeText(textToCopy);
+      alert("Doctor questions copied to clipboard!");
+    }
 
     function resetSearch() {
       document.getElementById('result-card').classList.add('hidden');
