@@ -97,12 +97,14 @@ let lastResult   = null;
 // ── Event Listeners ───────────────────────────────────────────────
 function setupEventListeners() {
   // Disclaimer close
-  disclaimerClose.addEventListener('click', () => {
-    disclaimerBanner.style.display = 'none';
-  });
+  if (disclaimerClose) {
+    disclaimerClose.addEventListener('click', () => {
+      disclaimerBanner.style.display = 'none';
+    });
+  }
 
   // Theme
-  themeToggle.addEventListener('click', toggleTheme);
+  if (themeToggle) themeToggle.addEventListener('click', toggleTheme);
 
   // Settings
   if (settingsToggle) {
@@ -117,12 +119,14 @@ function setupEventListeners() {
     });
   }
 
-  clearAllData.addEventListener('click', () => {
-    if (confirm('🚨 Are you absolutely sure? This will delete all history, themes, and preferences forever.')) {
-      localStorage.clear();
-      window.location.reload();
-    }
-  });
+  if (clearAllData) {
+    clearAllData.addEventListener('click', () => {
+      if (confirm('🚨 Are you absolutely sure? This will delete all history, themes, and preferences forever.')) {
+        localStorage.clear();
+        window.location.reload();
+      }
+    });
+  }
 
   window.addEventListener('click', (e) => {
     if (e.target === settingsModal) settingsModal.style.display = 'none';
@@ -135,21 +139,23 @@ function setupEventListeners() {
     });
   }
 
-  // Autocomplete
-  symptomsInput.addEventListener('input', handleAutocomplete);
-  // Clear chips when textarea is empty
-  symptomsInput.addEventListener('input', () => {
-    if (symptomsInput.value.trim() === '') {
-      resetChips();
-    }
-    charCount.textContent = symptomsInput.value.length;
-  });
+  // Autocomplete & Symptom input
+  if (symptomsInput) {
+    symptomsInput.addEventListener('input', handleAutocomplete);
+    symptomsInput.addEventListener('input', () => {
+      if (symptomsInput.value.trim() === '') {
+        resetChips();
+      }
+      charCount.textContent = symptomsInput.value.length;
+    });
+
+    symptomsInput.addEventListener('keydown', e => {
+      if (e.key === 'Enter' && e.ctrlKey) handleSearch();
+    });
+  }
 
   // Submit
-  submitBtn.addEventListener('click', handleSearch);
-  symptomsInput.addEventListener('keydown', e => {
-    if (e.key === 'Enter' && e.ctrlKey) handleSearch();
-  });
+  if (submitBtn) submitBtn.addEventListener('click', handleSearch);
 
   // Results toolbar
   if (copyBtn) copyBtn.addEventListener('click', copyResults);
@@ -170,6 +176,7 @@ function setupEventListeners() {
 }
 
 function renderQuickChips() {
+  if (!quickChipsList) return;
   quickChipsList.innerHTML = '';
   QUICK_CHIPS.forEach(chip => {
     const btn = document.createElement('button');
@@ -197,6 +204,7 @@ function renderQuickChips() {
 }
 
 function resetChips() {
+  if (!quickChipsList) return;
   const chips = quickChipsList.querySelectorAll('.chip');
   chips.forEach(c => c.classList.remove('selected'));
 }
@@ -393,7 +401,6 @@ function showLoadingView() {
     if (progress > 70)  { step2.className = 'step done'; step3.className = 'step active'; }
   }, 350);
 
-  // Store interval so we can clean up
   window._loadingInterval = interval;
 }
 
@@ -456,8 +463,9 @@ function toggleTheme() {
 }
 
 function updateThemeIcon(theme) {
+  if (!themeToggle) return;
   const icon = themeToggle.querySelector('.theme-icon');
-  icon.textContent = theme === 'dark' ? '🌙' : '☀️';
+  if (icon) icon.textContent = theme === 'dark' ? '🌙' : '☀️';
 }
 
 // ── Autocomplete ──────────────────────────────────────────────────
@@ -465,7 +473,7 @@ function handleAutocomplete() {
   const query = symptomsInput.value.toLowerCase().split(/,\s*/).pop();
   
   if (!query || query.length < 2) {
-    suggestionsEl.style.display = 'none';
+    if (suggestionsEl) suggestionsEl.style.display = 'none';
     return;
   }
 
@@ -473,7 +481,7 @@ function handleAutocomplete() {
     .slice(0, 5);
 
   if (matches.length === 0) {
-    suggestionsEl.style.display = 'none';
+    if (suggestionsEl) suggestionsEl.style.display = 'none';
     return;
   }
 
@@ -577,6 +585,7 @@ function getHistory() {
 }
 
 function renderHistory() {
+  if (!recentSearches || !recentList) return;
   const history = getHistory();
   if (history.length === 0) {
     recentSearches.style.display = 'none';
@@ -584,7 +593,7 @@ function renderHistory() {
   }
 
   recentSearches.style.display = 'block';
-  recentList.innerHTML = history.map((item, i) =>
+  recentList.innerHTML = history.map((item) =>
     `<button class="recent-item" data-symptoms="${escHtml(item)}" tabindex="0" title="${escHtml(item)}">${escHtml(truncate(item, 50))}</button>`
   ).join('');
 
@@ -633,44 +642,4 @@ function escHtml(str) {
 
 function truncate(str, max) {
   return str.length > max ? str.slice(0, max) + '…' : str;
-}
-
-// ── Security Utilities ───────────────────────────────────────────
-function saveApiKey(key) {
-  if (key) {
-    localStorage.setItem(STORAGE_KEY_API, encodeKey(key));
-  } else {
-    localStorage.removeItem(STORAGE_KEY_API);
-  }
-}
-
-function checkApiKeyStatus() {
-  const hasKey = currentApiKey && currentApiKey.length > 10;
-  if (noKeyWarning) noKeyWarning.style.display = hasKey ? 'none' : 'block';
-  submitBtn.disabled = !hasKey;
-  
-  // Show stored badge
-  const badge = document.getElementById('keyStatusBadge');
-  if (badge) badge.style.display = hasKey ? 'inline-block' : 'none';
-}
-
-function encodeKey(key) {
-  const salt = "mediguide";
-  let result = "";
-  for (let i = 0; i < key.length; i++) {
-    result += String.fromCharCode(key.charCodeAt(i) ^ salt.charCodeAt(i % salt.length));
-  }
-  return btoa(result);
-}
-
-function decodeKey(encoded) {
-  try {
-    const decoded = atob(encoded);
-    const salt = "mediguide";
-    let result = "";
-    for (let i = 0; i < decoded.length; i++) {
-      result += String.fromCharCode(decoded.charCodeAt(i) ^ salt.charCodeAt(i % salt.length));
-    }
-    return result;
-  } catch { return ""; }
 }
