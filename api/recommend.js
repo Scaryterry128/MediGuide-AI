@@ -7,13 +7,15 @@ Evaluate user symptoms, severity, and duration to provide structured preliminary
 
 RULES:
 1. Return strictly valid JSON with no markdown wrapping.
-2. Provide practical, non-emergency preliminary insights and safe home care.
-3. List explicit questions for doctor visits and crucial emergency red flags.
+2. Provide non-emergency preliminary insights, safe home care, and over-the-counter (OTC) medication guidance.
+3. Explicitly state that OTC options are general suggestions and require verifying allergies/dosing with a pharmacist.
+4. List questions for doctor visits and crucial emergency red flags.
 
 OUTPUT JSON FORMAT ONLY:
 {
-  "preliminary_insight": "General overview of potential non-emergency causes based on symptoms.",
-  "home_care": ["Safe step 1", "Safe step 2"],
+  "preliminary_insight": "General overview of potential non-emergency causes.",
+  "home_care": ["Safe home step 1", "Safe home step 2"],
+  "otc_medicine_guidance": ["Common OTC option (e.g., Acetaminophen/Paracetamol for mild fever/pain) with disclaimer."],
   "doctor_questions": ["Question 1", "Question 2"],
   "red_flags": ["Emergency sign 1", "Emergency sign 2"]
 }`;
