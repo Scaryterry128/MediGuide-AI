@@ -1,31 +1,45 @@
 /**
  * MediGuide AI - Backend Proxy (Vercel Serverless Function)
- * This handles the secure communication with the Groq API using 
- * the GROQ_API_KEY environment variable.
+ * Route: /api/recommend
  */
 
 export default async function handler(req, res) {
-  // 1. Security: Only allow POST requests
+  // 1. Enable CORS Headers
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
+  res.setHeader(
+    'Access-Control-Allow-Headers',
+    'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version'
+  );
+
+  // Handle preflight OPTIONS request
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+
+  // 2. Method Validation
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed. Use POST.' });
   }
 
   try {
-    let { symptoms } = req.body;
+    // Safely destructure request body
+    const body = req.body || {};
+    let { symptoms } = body;
 
-    // 2. Strict Input Validation & Sanitization
+    // 3. Input Sanitization & Validation
     if (!symptoms || typeof symptoms !== 'string' || symptoms.trim().length < 3) {
-      return res.status(400).json({ error: 'Please provide valid symptoms description.' });
+      return res.status(400).json({ error: 'Please provide a valid symptoms description.' });
     }
 
-    // Limit length to prevent massive payloads (Security Guard)
     symptoms = symptoms.trim().substring(0, 1000);
 
-    // 3. Security: Get API Key from Environment Variable
+    // 4. API Key Verification
     const apiKey = process.env.GROQ_API_KEY;
     if (!apiKey) {
-      console.error('Server side error: Missing GROQ_API_KEY in environment.');
-      return res.status(500).json({ error: 'System configuration error. Please try again later.' });
+      console.error('Missing GROQ_API_KEY in environment variables.');
+      return res.status(500).json({ error: 'System configuration error. Missing API credentials.' });
     }
 
     const systemPrompt = `You are a specialized medical assistant for the Indian pharmaceutical market. 
@@ -63,8 +77,8 @@ JSON Schema:
   ]
 }`;
 
-    // 4. Call Groq API with backend-side security
-    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    // 5. Call Groq API
+    const response = await fetch('[https://api.groq.com/openai/v1/chat/completions](https://api.groq.com/openai/v1/chat/completions)', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -73,31 +87,35 @@ JSON Schema:
       body: JSON.stringify({
         model: 'llama-3.3-70b-versatile',
         max_tokens: 2048,
-        temperature: 0.2, // Lower temperature for more factual medical data
+        temperature: 0.2,
         messages: [
           { role: 'system', content: systemPrompt },
-          { role: 'user',   content: symptoms }
+          { role: 'user', content: symptoms }
         ],
-        response_format: { type: "json_object" }
+        response_format: { type: 'json_object' }
       })
     });
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      console.error('AI API Error:', errorData);
-      return res.status(response.status).json({ 
-        error: 'The Medical AI is currently busy. Please try again shortly.' 
+      console.error('Groq AI API Error:', errorData);
+      return res.status(response.status).json({
+        error: 'The Medical AI service is currently busy. Please try again shortly.'
       });
     }
 
     const data = await response.json();
-    const result = data.choices[0].message.content;
+    let rawContent = data.choices?.[0]?.message?.content || '{}';
 
-    // 5. Securely return JSON
-    res.status(200).json(JSON.parse(result));
+    // Clean Markdown code blocks if model formats response as ```json ... ```
+    rawContent = rawContent.replace(/```json\s*/gi, '').replace(/```/g, '').trim();
+
+    const parsedData = JSON.parse(rawContent);
+
+    return res.status(200).json(parsedData);
 
   } catch (error) {
-    console.error('Fatal Server Side Error:', error);
-    res.status(500).json({ error: 'Server Connection Error' });
+    console.error('Server Execution Error:', error);
+    return res.status(500).json({ error: 'Failed to process medical recommendation request.' });
   }
 }
